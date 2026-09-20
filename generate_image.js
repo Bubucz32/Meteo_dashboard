@@ -2,10 +2,15 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-// Seznam vašich HTML stránek a název výstupního obrázku
+// Seznam stránek s definovanou orientací
 const PAGES = [
-  { html: 'index.html', output: 'stranka1.png' },
-  { html: 'index_dark.html', output: 'stranka2.png' }
+  // Varianta na šířku (800x480)
+  { html: 'index.html', output: 'index_landscape.png', width: 800, height: 480 },
+  { html: 'index_dark.html', output: 'index_dark_landscape.png', width: 800, height: 480 },
+
+  // Varianta na výšku (480x800)
+  { html: 'index_portrait.html', output: 'index_portrait.png', width: 480, height: 800 },
+  { html: 'index_dark_portrait.html', output: 'index_dark_portrait.png', width: 480, height: 800 }
 ];
 
 (async () => {
@@ -14,19 +19,31 @@ const PAGES = [
   });
   const page = await browser.newPage();
 
-  // Rozlišení pro 7.4" E-Paper (800 x 480 px)
-  await page.setViewport({ width: 800, height: 480 });
-
   if (!fs.existsSync('out')) {
     fs.mkdirSync('out');
   }
 
   for (const item of PAGES) {
+    console.log(`Renderuji: ${item.html} (${item.width}x${item.height})...`);
+
+    await page.setViewport({
+      width: item.width,
+      height: item.height,
+      deviceScaleFactor: 1
+    });
+
     const filePath = `file://${path.join(__dirname, item.html)}`;
-    console.log(`Renderuji: ${item.html}...`);
-    
     await page.goto(filePath, { waitUntil: 'networkidle0' });
-    await page.screenshot({ path: `out/${item.output}` });
+
+    await page.screenshot({
+      path: `out/${item.output}`,
+      clip: {
+        x: 0,
+        y: 0,
+        width: item.width,
+        height: item.height
+      }
+    });
   }
 
   await browser.close();
