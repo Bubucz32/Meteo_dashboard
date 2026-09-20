@@ -4,8 +4,8 @@ const fs = require('fs');
 
 // Seznam vašich HTML stránek a název výstupního obrázku
 const PAGES = [
-  { html: 'stranka1.html', output: 'stranka1.png' },
-  { html: 'stranka2.html', output: 'stranka2.png' }
+  { html: 'index.html', output: 'stranka1.png' },
+  { html: 'index_dark.html', output: 'stranka2.png' }
 ];
 
 (async () => {
