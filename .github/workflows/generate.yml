@@ -1,0 +1,37 @@
+name: Generate E-Paper Screenshot
+
+on:
+  schedule:
+    # Automatické spuštění každých 5 minut
+    - cron: '*/5 * * * *'
+  # Umožní i ruční spuštění z webového rozhraní
+  workflow_dispatch: 
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stáhnutí repozitáře
+        uses: actions/checkout@v4
+
+      - name: Příprava Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalace Puppeteeru
+        run: |
+          mkdir -p out
+          npm install puppeteer
+
+      - name: Spuštění renderování HTML do PNG
+        run: node generate_image.js
+
+      - name: Publikace obrázků na GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
