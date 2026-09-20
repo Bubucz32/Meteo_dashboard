@@ -1,0 +1,875 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shrnutí meteostanic</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --border-color: #ffffff;
+            --card-bg: #000000  ;
+            --subtext-color: #aaaaaa;
+            --grid-color: #444444;
+		  }
+
+
+        html, body {
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        @media (min-width: 901px) and (orientation: landscape) {
+            html, body {
+                height: 98vh;
+                overflow: auto;
+            }
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, var(--text-color), var(--text-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .time {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+/* Kontejner pro grafy na mobilu */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 250px; /* Stabilní výška pro mobilní displeje */
+    margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+    .chart-container {
+        height: 200px; /* Mírně kompaktnější výška na malých telefonech */
+    }
+}
+
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 5px;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .stations-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .card.st1 { border-top: 4px solid var(--st1-color); }
+        .card.st2 { border-top: 4px solid var(--st2-color); }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card.st1 .card-title { color: var(--st1-color); }
+        .card.st2 .card-title { color: var(--st2-color); }
+
+        .wind-arrow {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+            color: var(--accent-yellow);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px 12px;
+        }
+
+        .weather-icon-box {
+            grid-column: 3;
+            grid-row: 1 / span 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid var(--grid-color);
+            padding-left: 8px;
+        }
+
+        .big-svg-container {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .big-svg-container svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .value-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .value-group.full-width {
+            grid-column: span 3;
+        }
+
+        .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--subtext-color);
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            font-size: 1.7rem;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+
+        .value-large {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--text-color);
+        }
+
+        .unit {
+            font-size: 1.1rem;
+            font-weight: normal;
+            color: var(--subtext-color);
+        }
+
+        .tendency {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+
+        .highlight-rain { color: var(--accent-rain); }
+        .highlight-solar { color: var(--accent-yellow); }
+
+        /* MŘÍŽKA GRAFŮ - ŠÍŘKOVÉ ZOBRAZENÍ */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            flex: 1;
+            min-height: 250;
+        }
+
+        .chart-box {
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 8px;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-color);
+            margin-top: 5px;
+            padding-top: 4px;
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--subtext-color);
+        }
+
+        .theme-btn {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--st2-color);
+            color: var(--st2-color);
+        }
+
+        /* --- ZOBRAZENÍ NA VÝŠKU (PORTRAIT / < 900px) --- */
+        @media (max-width: 900px), (orientation: portrait) {
+            body {
+                overflow-y: auto;
+            }
+
+            .stations-row {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-container {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                gap: 15px;
+            }
+
+            .chart-box {
+                height: 250px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">Meteo Dashboard</div>
+        <div class="time" id="clock">00:00</div>
+    </header>
+
+    <main>
+        <div class="stations-row">
+            <!-- STANICE 1 -->
+            <section class="card">
+                <div class="card-title" id="st1-title">Stanice 1</div>
+                
+                <div class="data-grid">
+                    <div class="value-group">
+                        <div class="label">Teplota</div>
+                        <div class="value-large"><span id="st1-temp">--</span> <span class="unit">°C</span></div>
+                    </div>
+                    <div class="value-group">
+                        <div class="label">SLUNEČNÍ ZÁŘENÍ</div>
+                        <div class="value"><span id="st1-solar">--</span> <span class="unit">W/m²</span></div>
+                    </div>
+
+                    <div class="weather-icon-box">
+                        <div class="label" id="st1-cond-text" style="font-size: 1.1rem; margin-bottom: 4px; text-transform: uppercase;">--</div>
+                        <div id="st1-cond-icon" class="big-svg-container"></div>
+                    </div>
+
+                    <div class="value-group">
+                        <div class="label">Vlhkost</div>
+                        <div class="value"><span id="st1-humidity">--</span> <span class="unit">%</span></div>
+                    </div>
+                    <div class="value-group">
+                        <div class="label">Tlak a tendence</div>
+                        <div class="value" style="font-size: 1.4rem;">
+                            <span id="st1-pressure">--</span> <span style="font-size: 0.9rem;">hPa</span>
+                            <span id="st1-tendency" class="tendency">--</span>
+                        </div>
+                    </div>
+
+                    <div class="value-group">
+                        <div class="label">Vítr (Směr / Náraz)</div>
+                        <div class="value" style="font-size: 1.1rem;">
+                            <span id="st1-wind-dir">--</span> 
+                            <span id="st1-wind-arrow" class="wind-arrow">↑</span> 
+                            <span id="st1-wind-speed">--</span> (<span id="st1-wind-gust">--</span>) <span style="font-size: 0.8rem;">km/h</span>
+                        </div>    
+                    </div>
+                    <div class="value-group">
+                        <div class="label">UV Index</div>
+                        <div class="value"><span id="st1-uv">--</span></div>
+                    </div>
+
+                    <div class="value-group full-width">
+                        <div class="label">Srážky (Aktuálně / Dnes / Měsíc)</div>
+                        <div class="value" style="font-size: 1.2rem;">
+                            <span id="st1-precip-rate">--</span> mm/h | 
+                            <span id="st1-precip-today">--</span> / 
+                            <span id="st1-precip-month">--</span> <span style="font-size: 0.8rem;">mm</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STANICE 2 -->
+            <section class="card">
+                <div class="card-title" id="st2-title">Stanice 2</div>
+
+                <div class="data-grid">
+                    <div class="value-group">
+                        <div class="label">Teplota</div>
+                        <div class="value-large"><span id="st2-temp">--</span> <span class="unit">°C</span></div>
+                    </div>
+                    <div class="value-group">
+                        <div class="label">SLUNEČNÍ ZÁŘENÍ</div>
+                        <div class="value"><span id="st2-solar">--</span> <span class="unit">W/m²</span></div>
+                    </div>
+
+                    <div class="weather-icon-box">
+                        <div class="label" id="st2-cond-text" style="font-size: 1.1rem; margin-bottom: 4px; text-transform: uppercase;">--</div>
+                        <div id="st2-cond-icon" class="big-svg-container"></div>
+                    </div>
+
+                    <div class="value-group">
+                        <div class="label">Vlhkost</div>
+                        <div class="value"><span id="st2-humidity">--</span> <span class="unit">%</span></div>
+                    </div>
+                    <div class="value-group">
+                        <div class="label">Tlak a tendence</div>
+                        <div class="value" style="font-size: 1.4rem;">
+                            <span id="st2-pressure">--</span> <span style="font-size: 0.9rem;">hPa</span>
+                            <span id="st2-tendency" class="tendency">--</span>
+                        </div>
+                    </div>
+
+                    <div class="value-group">
+                        <div class="label">Vítr (Směr / Náraz)</div>
+                        <div class="value" style="font-size: 1.1rem;">
+                            <span id="st2-wind-dir">--</span> 
+                            <span id="st2-wind-arrow" class="wind-arrow">↑</span> 
+                            <span id="st2-wind-speed">--</span> (<span id="st2-wind-gust">--</span>) <span style="font-size: 0.8rem;">km/h</span>
+                        </div>    
+                    </div>
+                    <div class="value-group">
+                        <div class="label">UV Index</div>
+                        <div class="value"><span id="st2-uv">--</span></div>
+                    </div>
+
+                    <div class="value-group full-width">
+                        <div class="label">Srážky (Aktuálně / Dnes / Měsíc)</div>
+                        <div class="value" style="font-size: 1.2rem;">
+                            <span id="st2-precip-rate">--</span> mm/h | 
+                            <span id="st2-precip-today">--</span> / 
+                            <span id="st2-precip-month">--</span> <span style="font-size: 0.8rem;">mm</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-box"><canvas id="tempChart"></canvas></div>
+            <div class="chart-box"><canvas id="humidityChart"></canvas></div>
+            <div class="chart-box"><canvas id="pressureChart"></canvas></div>
+            <div class="chart-box"><canvas id="precipChart"></canvas></div>
+        </div>
+    </main>
+
+    <footer>
+        Poslední aktualizace: <span id="last-update">Nikdy</span>
+    </footer>
+<script>
+         // ==================== KONFIGURACE ====================
+        const WU_API_KEY = "__WU_API_KEY_GITHUB__"; //Pro github zašifrováno
+        
+        const ST1_ID = "IPRAGU288";
+        const ST1_NAME = "Kačerov";
+
+        const ST2_ID = "ILIPNK20";
+        const ST2_NAME = "Lipník";
+        // =====================================================
+
+    const chartInstances = {};
+
+
+    // PŘIDÁNO: Správné vynucené překreslení při změně orientace/velikosti
+    window.addEventListener('resize', () => {
+        Object.values(chartInstances).forEach(chart => {
+            if (chart) {
+                chart.resize();
+            }
+        });
+    });
+
+    function updateClock() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('cs-CZ'); // např. 20. 9. 2026
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    document.getElementById('clock').innerText = `${dateStr} Aktualizováno v: ${hours}:${minutes}`;
+}
+    function degToCompass(num) {
+        if (num === null || num === undefined) return "--";
+        const val = Math.floor((num / 22.5) + 0.5);
+        const arr = ["S", "SSV", "SV", "VSV", "V", "VJV", "JV", "JJV", "J", "JJZ", "JZ", "ZJZ", "Z", "ZSZ", "SZ", "SSZ"];
+        return arr[(val % 16)];
+    }
+
+    function updateWindDirection(elementId, degrees) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        if (degrees !== null && degrees !== undefined) {
+            el.style.transform = `rotate(${degrees}deg)`;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    /* --- SVG IKONY --- */
+    const EINK_ICONS = {
+        sun: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+        cloudSun: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41"/><path d="M15.9 11.5a4 4 0 0 0-7.3-2.2 5 5 0 0 0-8.6 4.7 3.5 3.5 0 0 0 3.5 3.5h11a3 3 0 0 0 1.4-5.5z"/></svg>`,
+        cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
+        rain: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v8M8 13v8M12 15v8"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>`,
+        moon: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+    };
+
+    function estimateWeatherCondition(obs, historyArray) {
+        if (!obs) return { text: "--", icon: "" };
+
+        const precip = obs.imperial?.precipRate ? obs.imperial.precipRate * 25.4 : 0;
+        const solar = obs.solarRadiation ?? 0;
+
+        if (precip > 0) return { text: "Déšť", icon: EINK_ICONS.rain };
+        if (solar > 300) return { text: "Jasno", icon: EINK_ICONS.sun };
+        if (solar > 100) return { text: "Polojasno", icon: EINK_ICONS.cloudSun };
+        if (solar <= 100 && solar > 0) return { text: "Zataženo", icon: EINK_ICONS.cloud };
+        return { text: "Noc", icon: EINK_ICONS.moon };
+    }
+
+ 
+   // 3. Měsíční přehled (odstraněn cache-buster &_=)
+async function fetchPrecipSummary(stationId) {
+    if (!WU_API_KEY || WU_API_KEY.includes("DOPLŇTE")) return { month: '--' };
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    
+    const startDate = `${year}${month}01`;
+    const endDate = `${year}${month}${day}`;
+    
+    const url = `https://api.weather.com/v2/pws/history/daily?stationId=${stationId}&format=json&units=m&startDate=${startDate}&endDate=${endDate}&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return { month: '--' };
+        const data = await response.json();
+        
+        let monthTotal = 0;
+        if (data.observations && Array.isArray(data.observations)) {
+            data.observations.forEach(obs => {
+                const dayPrecip = obs.metric?.precipTotal ?? obs.metric?.precipRate ?? 0;
+                if (typeof dayPrecip === 'number' && !isNaN(dayPrecip)) {
+                    monthTotal += dayPrecip;
+                }
+            });
+        }
+        return { month: monthTotal.toFixed(1) };
+    } catch (err) {
+        console.error(`Chyba načítání srážek pro ${stationId}:`, err);
+        return { month: '--' };
+    }
+}
+
+    function getPressureTendencyFromHistory(historyArray, currentPressure) {
+        if (!historyArray || historyArray.length < 2 || currentPressure === null) return "➔";
+        const prevEntry = historyArray[historyArray.length - 2];
+        
+        let prevPressure = null;
+        if (prevEntry?.imperial?.pressure !== undefined) {
+            prevPressure = prevEntry.imperial.pressure * 33.8639;
+        } else if (prevEntry?.metric?.pressure !== undefined) {
+            prevPressure = prevEntry.metric.pressure;
+        }
+
+        if (prevPressure === null) return "➔";
+        const diff = currentPressure - prevPressure;
+        if (diff >= 0.5) return "⬆";
+        if (diff <= -0.5) return "⬇";
+        return "➔";
+    }
+
+// 1. Aktuální data (odstraněn cache-buster &_=)
+async function fetchStationData(stationId) {
+    if (!WU_API_KEY || WU_API_KEY.includes("DOPLŇTE")) return null;
+    const url = `https://api.weather.com/v2/pws/observations/current?stationId=${stationId}&format=json&units=e&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.observations ? data.observations[0] : null;
+    } catch (err) {
+        console.error(`Chyba načítání pro stanici ${stationId}:`, err);
+        return null;
+    }
+}
+
+// 2. Historie (přidán povinný parametr date=YYYYMMDD pro dnešek + odstraněn cache-buster)
+async function fetchStationHistory(stationId) {
+    if (!WU_API_KEY || WU_API_KEY.includes("DOPLŇTE")) return [];
+
+    // Použití živého 1day endpointu s přesným formátem bez zbytečných parametrů
+    const url = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${stationId}&format=json&units=e&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`History HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        
+        // Filtr: Ponecháme pouze záznamy z DNEŠNÍHO kalendářního dne (v lokálním čase)
+        const todayStr = new Date().toLocaleDateString('sv-SE'); // Vrací YYYY-MM-DD v lokálním čase
+        
+        const todayObservations = (data.observations || []).filter(item => {
+            if (!item.epoch) return false;
+            const itemDate = new Date(item.epoch * 1000).toLocaleDateString('sv-SE');
+            return itemDate === todayStr;
+        });
+
+        return todayObservations;
+    } catch (err) {
+        console.error(`Chyba načítání historie pro ${stationId}:`, err);
+        return [];
+    }
+}
+
+    // ÚPRAVA: Dynamická detekce mobilu v reálném čase
+    function createBaseOptions(titleText, beginAtZero = true, unitSuffix = "") {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            resizeDelay: 100,
+            animation: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                title: { 
+                    display: true, 
+                    text: titleText, 
+                    color: '#ffffff', 
+                    font: (ctx) => ({ size: ctx.chart.width < 500 ? 11 : 13, weight: 'bold' }) 
+                },
+                legend: { 
+                    labels: { 
+                        color: '#ffffff', 
+                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 10 : 11, weight: 'bold' }), 
+                        boxWidth: 15 
+                    } 
+                },
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    padding: 6,
+                    backgroundColor: '#1e293b',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    callbacks: {
+                        title: (context) => `Čas: ${context[0].label}`,
+                        label: (context) => {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            return context.parsed.y !== null ? label + context.parsed.y + ' ' + unitSuffix : label + '--';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    type: 'category',
+                    grid: { display: true, color: '#334155', tickColor: 'transparent' }, 
+                    ticks: { 
+                        color: '#94a3b8', 
+                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 9 : 11, weight: 'bold' }),
+                        autoSkip: false,
+                        maxRotation: 0,
+                        minRotation: 0,
+                        callback: function(val, index) {
+                            const label = this.getLabelForValue(val);
+                            if (!label) return '';
+                            if (label.endsWith(':00')) {
+                                const hour = parseInt(label.split(':')[0], 10);
+                                const isSmall = this.chart.width < 500;
+                                const step = isSmall ? 4 : 2;
+                                if (hour % step === 0) return label;
+                            }
+                            return null;
+                        }
+                    }
+                },
+                y: { 
+                    beginAtZero: beginAtZero, 
+                    grid: { display: true, color: '#334155' },
+                    ticks: { 
+                        color: '#94a3b8', 
+                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 9 : 11, weight: 'bold' }) 
+                    } 
+                }
+            }
+        };
+    }
+
+    function renderLineChart(canvasId, labels, title, data1, data2, beginAtZero = true, unitSuffix = "") {
+        const ctx = document.getElementById(canvasId)?.getContext('2d');
+        if (!ctx) return;
+        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+
+        chartInstances[canvasId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { 
+                        label: ST1_NAME, 
+                        data: data1, 
+                        borderColor: '#ffffff', 
+                        backgroundColor: '#ffffff', 
+                        borderWidth: 2, 
+                        pointRadius: 0, 
+                        pointHoverRadius: 6, 
+                        spanGaps: true 
+                    },
+                    { 
+                        label: ST2_NAME, 
+                        data: data2, 
+                        borderColor: '#ffffff', 
+                        backgroundColor: '#ffffff', 
+                        borderWidth: 1.5, 
+                        borderDash: [5, 4], 
+                        pointRadius: 0, 
+                        pointHoverRadius: 6, 
+                        spanGaps: true 
+                    }
+                ]
+            },
+            options: createBaseOptions(title, beginAtZero, unitSuffix)
+        });
+    }
+
+    function renderBarChart(canvasId, labels, title, data1, data2, unitSuffix = "") {
+        const ctx = document.getElementById(canvasId)?.getContext('2d');
+        if (!ctx) return;
+        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+
+        chartInstances[canvasId] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: ST1_NAME, data: data1, backgroundColor: '#ffffff' },
+                    { label: ST2_NAME, data: data2, backgroundColor: '#B8B8B8' }
+                ]
+            },
+            options: createBaseOptions(title, true, unitSuffix)
+        });
+    }
+
+    function processAndRenderWUHistory(hist1, hist2) {
+        const fullDayLabels = [];
+        for (let h = 0; h < 24; h++) {
+            for (let m = 0; m < 60; m += 5) {
+                const hh = String(h).padStart(2, '0');
+                const mm = String(m).padStart(2, '0');
+                fullDayLabels.push(`${hh}:${mm}`);
+            }
+        }
+        fullDayLabels.push("24:00");
+
+        const dataMap1 = {};
+        const dataMap2 = {};
+
+        function roundToNearest5Min(dateObj) {
+            const minutes = dateObj.getMinutes();
+            const roundedMinutes = Math.round(minutes / 5) * 5;
+            const copy = new Date(dateObj);
+            copy.setMinutes(roundedMinutes, 0, 0);
+            
+            const hh = String(copy.getHours()).padStart(2, '0');
+            const mm = String(copy.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+function extractTimeSlot(item) {
+    // 1. Přednostně použijeme UTC Epoch čas, který převedeme na LOKÁLNÍ čas prohlížeče
+    if (item.epoch || item.valid_time_gmt) {
+        const ep = item.epoch || item.valid_time_gmt;
+        return roundToNearest5Min(new Date(ep * 1000));
+    }
+    
+    // 2. Pokud je k dispozici obsTimeUtc, převedeme ho z UTC na lokální čas
+    if (item.obsTimeUtc) {
+        const d = new Date(item.obsTimeUtc);
+        if (!isNaN(d.getTime())) return roundToNearest5Min(d);
+    }
+
+    // 3. Záložní řešení pro obsTimeLocal
+    if (item.obsTimeLocal) {
+        const d = new Date(item.obsTimeLocal.replace(/-/g, '/'));
+        if (!isNaN(d.getTime())) return roundToNearest5Min(d);
+    }
+    
+    return null;
+}
+        function extractMetrics(item) {
+            if (!item) return null;
+            const imp = item.imperial || {};
+            
+            let tempF = imp.tempAvg ?? imp.tempHigh ?? imp.tempLow ?? imp.temp ?? item.temp ?? null;
+            let tempC = (tempF !== null && !isNaN(tempF)) ? parseFloat(((tempF - 32) * (5 / 9)).toFixed(1)) : null;
+
+            let pressInHg = imp.pressureMax ?? imp.pressureMin ?? imp.pressure ?? item.pressure ?? null;
+            let pressHpa = (pressInHg !== null && !isNaN(pressInHg)) ? parseFloat((pressInHg * 33.8639).toFixed(1)) : null;
+
+            let h = item.humidityAvg ?? item.humidity ?? imp.humidity ?? null;
+            let hum = h !== null ? parseInt(h, 10) : null;
+
+            let precipIn = imp.precipTotal ?? imp.precipRate ?? item.precipTotal ?? 0;
+            let precipMm = precipIn !== null ? parseFloat((precipIn * 25.4).toFixed(1)) : 0;
+
+            return { temp: tempC, humidity: hum, pressure: pressHpa, precip: precipMm };
+        }
+
+        if (Array.isArray(hist1)) {
+            hist1.forEach(item => {
+                const slot = extractTimeSlot(item);
+                if (slot) dataMap1[slot] = extractMetrics(item);
+            });
+        }
+
+        if (Array.isArray(hist2)) {
+            hist2.forEach(item => {
+                const slot = extractTimeSlot(item);
+                if (slot) dataMap2[slot] = extractMetrics(item);
+            });
+        }
+
+        const getSeriesData = (dataMap, valKey) => fullDayLabels.map(t => dataMap[t] ? dataMap[t][valKey] : null);
+
+        renderLineChart('tempChart', fullDayLabels, 'Teplota (°C)', getSeriesData(dataMap1, 'temp'), getSeriesData(dataMap2, 'temp'), false, '°C');
+        renderLineChart('humidityChart', fullDayLabels, 'Vlhkost (%)', getSeriesData(dataMap1, 'humidity'), getSeriesData(dataMap2, 'humidity'), true, '%');
+        renderLineChart('pressureChart', fullDayLabels, 'Tlak vzduchu (hPa)', getSeriesData(dataMap1, 'pressure'), getSeriesData(dataMap2, 'pressure'), false, 'hPa');
+        renderBarChart('precipChart', fullDayLabels, 'Srážky (mm)', getSeriesData(dataMap1, 'precip'), getSeriesData(dataMap2, 'precip'), 'mm');
+    }
+
+    async function updateAllData() {
+        updateClock();
+        document.getElementById('st1-title').innerText = ST1_NAME;
+        document.getElementById('st2-title').innerText = ST2_NAME;
+
+        const [history1, history2, monthPrecip1, monthPrecip2, obs1, obs2] = await Promise.all([
+            fetchStationHistory(ST1_ID),
+            fetchStationHistory(ST2_ID),
+            fetchPrecipSummary(ST1_ID),
+            fetchPrecipSummary(ST2_ID),
+            fetchStationData(ST1_ID),
+            fetchStationData(ST2_ID)
+        ]);
+
+        const cond1 = estimateWeatherCondition(obs1, history1);
+        const cond2 = estimateWeatherCondition(obs2, history2);
+
+        // STANICE 1
+        if (obs1) {
+            let temp1InC = obs1.imperial?.temp !== undefined ? ((obs1.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
+            let press1 = obs1.imperial?.pressure !== undefined ? obs1.imperial.pressure * 33.8639 : null;
+
+            document.getElementById('st1-temp').innerText = temp1InC;
+            document.getElementById('st1-humidity').innerText = obs1.humidity ?? '--';
+            document.getElementById('st1-pressure').innerText = press1 !== null ? press1.toFixed(2) : '--';
+            document.getElementById('st1-tendency').innerText = getPressureTendencyFromHistory(history1, press1);
+            document.getElementById('st1-uv').innerText = obs1.uv ?? '--';
+            document.getElementById('st1-solar').innerText = obs1.solarRadiation ?? '--';
+
+            document.getElementById('st1-precip-rate').innerText = obs1.imperial?.precipRate !== undefined ? (obs1.imperial.precipRate * 25.4).toFixed(1) : '--';
+            document.getElementById('st1-precip-today').innerText = obs1.imperial?.precipTotal !== undefined ? (obs1.imperial.precipTotal * 25.4).toFixed(1) : '--';
+            document.getElementById('st1-precip-month').innerText = monthPrecip1.month;
+
+            document.getElementById('st1-wind-dir').innerText = degToCompass(obs1.winddir);
+            document.getElementById('st1-wind-speed').innerText = obs1.imperial?.windSpeed !== undefined ? (obs1.imperial.windSpeed * 1.60934).toFixed(1) : '--';
+            document.getElementById('st1-wind-gust').innerText = obs1.imperial?.windGust !== undefined ? (obs1.imperial.windGust * 1.60934).toFixed(1) : '--';
+            updateWindDirection('st1-wind-arrow', obs1.winddir);
+            document.getElementById('st1-cond-text').innerText = cond1.text;
+            document.getElementById('st1-cond-icon').innerHTML = cond1.icon;
+        }
+
+        // STANICE 2
+        if (obs2) {
+            let temp2InC = obs2.imperial?.temp !== undefined ? ((obs2.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
+            let press2 = obs2.imperial?.pressure !== undefined ? obs2.imperial.pressure * 33.8639 : null;
+
+            document.getElementById('st2-temp').innerText = temp2InC;
+            document.getElementById('st2-humidity').innerText = obs2.humidity ?? '--';
+            document.getElementById('st2-pressure').innerText = press2 !== null ? press2.toFixed(2) : '--';
+            document.getElementById('st2-tendency').innerText = getPressureTendencyFromHistory(history2, press2);
+            document.getElementById('st2-uv').innerText = obs2.uv ?? '--';
+            document.getElementById('st2-solar').innerText = obs2.solarRadiation ?? '--';
+
+            document.getElementById('st2-precip-rate').innerText = obs2.imperial?.precipRate !== undefined ? (obs2.imperial.precipRate * 25.4).toFixed(1) : '--';
+            document.getElementById('st2-precip-today').innerText = obs2.imperial?.precipTotal !== undefined ? (obs2.imperial.precipTotal * 25.4).toFixed(1) : '--';
+            document.getElementById('st2-precip-month').innerText = monthPrecip2.month;
+
+            document.getElementById('st2-wind-dir').innerText = degToCompass(obs2.winddir);
+            document.getElementById('st2-wind-speed').innerText = obs2.imperial?.windSpeed !== undefined ? (obs2.imperial.windSpeed * 1.60934).toFixed(1) : '--';
+            document.getElementById('st2-wind-gust').innerText = obs2.imperial?.windGust !== undefined ? (obs2.imperial.windGust * 1.60934).toFixed(1) : '--';
+            updateWindDirection('st2-wind-arrow', obs2.winddir);
+            document.getElementById('st2-cond-text').innerText = cond2.text;
+            document.getElementById('st2-cond-icon').innerHTML = cond2.icon;
+        }
+
+        processAndRenderWUHistory(history1, history2);
+const now = new Date();
+const dateStr = now.toLocaleDateString('cs-CZ');
+const timeStr = now.toLocaleTimeString('cs-CZ');
+
+document.getElementById('last-update').innerText = `${dateStr} ${timeStr}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        updateAllData();
+        setInterval(updateAllData, 5 * 60 * 1000);
+        setInterval(updateClock, 1000);
+    });
+</script>
+</body>
+</html>
