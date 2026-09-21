@@ -2,7 +2,7 @@ name: Generate E-Paper Screenshot
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -20,13 +20,11 @@ jobs:
         with:
           node-version: '20'
 
-      # --- NOVÝ BEZPEČNOSTNÍ KROK ---
       - name: Vložení tajného API klíče do HTML
         env:
-          SECRET_KEY: ${{ secrets.WU_API_KEY }}
+          SECRET_KEY: ${{ secrets.WU_API_KEY_GITHUB }}
         run: |
           sed -i "s/__WU_API_KEY_GITHUB__/${SECRET_KEY}/g" *.html
-      # -------------------------------
 
       - name: Instalace Puppeteeru
         run: |
