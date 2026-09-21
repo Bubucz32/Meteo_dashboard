@@ -745,83 +745,91 @@ function renderBarChart(canvasId, labels, title, data1, data2, unitSuffix = "") 
         renderBarChart('precipChart', fullDayLabels, 'Srážky (mm)', getSeriesData(dataMap1, 'precip'), getSeriesData(dataMap2, 'precip'), 'mm');
     }
 
-    async function updateAllData() {
+   async function updateAllData() {
         updateClock();
         document.getElementById('st1-title').innerText = ST1_NAME;
         document.getElementById('st2-title').innerText = ST2_NAME;
 
-        const [history1, history2, monthPrecip1, monthPrecip2, obs1, obs2] = await Promise.all([
-            fetchStationHistory(ST1_ID),
-            fetchStationHistory(ST2_ID),
-            fetchPrecipSummary(ST1_ID),
-            fetchPrecipSummary(ST2_ID),
-            fetchStationData(ST1_ID),
-            fetchStationData(ST2_ID)
-        ]);
+        try {
+            const [history1, history2, monthPrecip1, monthPrecip2, obs1, obs2] = await Promise.all([
+                fetchStationHistory(ST1_ID),
+                fetchStationHistory(ST2_ID),
+                fetchPrecipSummary(ST1_ID),
+                fetchPrecipSummary(ST2_ID),
+                fetchStationData(ST1_ID),
+                fetchStationData(ST2_ID)
+            ]);
 
-        const cond1 = estimateWeatherCondition(obs1, history1);
-        const cond2 = estimateWeatherCondition(obs2, history2);
+            const cond1 = estimateWeatherCondition(obs1, history1);
+            const cond2 = estimateWeatherCondition(obs2, history2);
 
-        // STANICE 1
-        if (obs1) {
-            let temp1InC = obs1.imperial?.temp !== undefined ? ((obs1.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
-            let press1 = obs1.imperial?.pressure !== undefined ? obs1.imperial.pressure * 33.8639 : null;
+            // STANICE 1
+            if (obs1) {
+                let temp1InC = obs1.imperial?.temp !== undefined ? ((obs1.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
+                let press1 = obs1.imperial?.pressure !== undefined ? obs1.imperial.pressure * 33.8639 : null;
 
-            document.getElementById('st1-temp').innerText = temp1InC;
-            document.getElementById('st1-humidity').innerText = obs1.humidity ?? '--';
-            document.getElementById('st1-pressure').innerText = press1 !== null ? press1.toFixed(2) : '--';
-            document.getElementById('st1-tendency').innerText = getPressureTendencyFromHistory(history1, press1);
-            document.getElementById('st1-uv').innerText = obs1.uv ?? '--';
-            document.getElementById('st1-solar').innerText = obs1.solarRadiation ?? '--';
+                document.getElementById('st1-temp').innerText = temp1InC;
+                document.getElementById('st1-humidity').innerText = obs1.humidity ?? '--';
+                document.getElementById('st1-pressure').innerText = press1 !== null ? press1.toFixed(2) : '--';
+                document.getElementById('st1-tendency').innerText = getPressureTendencyFromHistory(history1, press1);
+                document.getElementById('st1-uv').innerText = obs1.uv ?? '--';
+                document.getElementById('st1-solar').innerText = obs1.solarRadiation ?? '--';
 
-            document.getElementById('st1-precip-rate').innerText = obs1.imperial?.precipRate !== undefined ? (obs1.imperial.precipRate * 25.4).toFixed(1) : '--';
-            document.getElementById('st1-precip-today').innerText = obs1.imperial?.precipTotal !== undefined ? (obs1.imperial.precipTotal * 25.4).toFixed(1) : '--';
-            document.getElementById('st1-precip-month').innerText = monthPrecip1.month;
+                document.getElementById('st1-precip-rate').innerText = obs1.imperial?.precipRate !== undefined ? (obs1.imperial.precipRate * 25.4).toFixed(1) : '--';
+                document.getElementById('st1-precip-today').innerText = obs1.imperial?.precipTotal !== undefined ? (obs1.imperial.precipTotal * 25.4).toFixed(1) : '--';
+                document.getElementById('st1-precip-month').innerText = monthPrecip1.month;
 
-            document.getElementById('st1-wind-dir').innerText = degToCompass(obs1.winddir);
-            document.getElementById('st1-wind-speed').innerText = obs1.imperial?.windSpeed !== undefined ? (obs1.imperial.windSpeed * 1.60934).toFixed(1) : '--';
-            document.getElementById('st1-wind-gust').innerText = obs1.imperial?.windGust !== undefined ? (obs1.imperial.windGust * 1.60934).toFixed(1) : '--';
-            updateWindDirection('st1-wind-arrow', obs1.winddir);
-            document.getElementById('st1-cond-text').innerText = cond1.text;
-            document.getElementById('st1-cond-icon').innerHTML = cond1.icon;
+                document.getElementById('st1-wind-dir').innerText = degToCompass(obs1.winddir);
+                document.getElementById('st1-wind-speed').innerText = obs1.imperial?.windSpeed !== undefined ? (obs1.imperial.windSpeed * 1.60934).toFixed(1) : '--';
+                document.getElementById('st1-wind-gust').innerText = obs1.imperial?.windGust !== undefined ? (obs1.imperial.windGust * 1.60934).toFixed(1) : '--';
+                updateWindDirection('st1-wind-arrow', obs1.winddir);
+                document.getElementById('st1-cond-text').innerText = cond1.text;
+                document.getElementById('st1-cond-icon').innerHTML = cond1.icon;
+            }
+
+            // STANICE 2
+            if (obs2) {
+                let temp2InC = obs2.imperial?.temp !== undefined ? ((obs2.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
+                let press2 = obs2.imperial?.pressure !== undefined ? obs2.imperial.pressure * 33.8639 : null;
+
+                document.getElementById('st2-temp').innerText = temp2InC;
+                document.getElementById('st2-humidity').innerText = obs2.humidity ?? '--';
+                document.getElementById('st2-pressure').innerText = press2 !== null ? press2.toFixed(2) : '--';
+                document.getElementById('st2-tendency').innerText = getPressureTendencyFromHistory(history2, press2);
+                document.getElementById('st2-uv').innerText = obs2.uv ?? '--';
+                document.getElementById('st2-solar').innerText = obs2.solarRadiation ?? '--';
+
+                document.getElementById('st2-precip-rate').innerText = obs2.imperial?.precipRate !== undefined ? (obs2.imperial.precipRate * 25.4).toFixed(1) : '--';
+                document.getElementById('st2-precip-today').innerText = obs2.imperial?.precipTotal !== undefined ? (obs2.imperial.precipTotal * 25.4).toFixed(1) : '--';
+                document.getElementById('st2-precip-month').innerText = monthPrecip2.month;
+
+                document.getElementById('st2-wind-dir').innerText = degToCompass(obs2.winddir);
+                document.getElementById('st2-wind-speed').innerText = obs2.imperial?.windSpeed !== undefined ? (obs2.imperial.windSpeed * 1.60934).toFixed(1) : '--';
+                document.getElementById('st2-wind-gust').innerText = obs2.imperial?.windGust !== undefined ? (obs2.imperial.windGust * 1.60934).toFixed(1) : '--';
+                updateWindDirection('st2-wind-arrow', obs2.winddir);
+                document.getElementById('st2-cond-text').innerText = cond1.text;
+                document.getElementById('st2-cond-icon').innerHTML = cond2.icon;
+            }
+
+            processAndRenderWUHistory(history1, history2);
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('cs-CZ');
+            const timeStr = now.toLocaleTimeString('cs-CZ');
+            document.getElementById('last-update').innerText = `${dateStr} ${timeStr}`;
+
+        } catch (e) {
+            console.error("Chyba při aktualizaci dat:", e);
+        } finally {
+            // Signalizace pro generovací skript (Puppeteer/Playwright), že je vše připraveno ke snímku
+            document.body.classList.add('rendered');
+            window.rendered = true;
         }
-
-        // STANICE 2
-        if (obs2) {
-            let temp2InC = obs2.imperial?.temp !== undefined ? ((obs2.imperial.temp - 32) * (5 / 9)).toFixed(1) : '--';
-            let press2 = obs2.imperial?.pressure !== undefined ? obs2.imperial.pressure * 33.8639 : null;
-
-            document.getElementById('st2-temp').innerText = temp2InC;
-            document.getElementById('st2-humidity').innerText = obs2.humidity ?? '--';
-            document.getElementById('st2-pressure').innerText = press2 !== null ? press2.toFixed(2) : '--';
-            document.getElementById('st2-tendency').innerText = getPressureTendencyFromHistory(history2, press2);
-            document.getElementById('st2-uv').innerText = obs2.uv ?? '--';
-            document.getElementById('st2-solar').innerText = obs2.solarRadiation ?? '--';
-
-            document.getElementById('st2-precip-rate').innerText = obs2.imperial?.precipRate !== undefined ? (obs2.imperial.precipRate * 25.4).toFixed(1) : '--';
-            document.getElementById('st2-precip-today').innerText = obs2.imperial?.precipTotal !== undefined ? (obs2.imperial.precipTotal * 25.4).toFixed(1) : '--';
-            document.getElementById('st2-precip-month').innerText = monthPrecip2.month;
-
-            document.getElementById('st2-wind-dir').innerText = degToCompass(obs2.winddir);
-            document.getElementById('st2-wind-speed').innerText = obs2.imperial?.windSpeed !== undefined ? (obs2.imperial.windSpeed * 1.60934).toFixed(1) : '--';
-            document.getElementById('st2-wind-gust').innerText = obs2.imperial?.windGust !== undefined ? (obs2.imperial.windGust * 1.60934).toFixed(1) : '--';
-            updateWindDirection('st2-wind-arrow', obs2.winddir);
-            document.getElementById('st2-cond-text').innerText = cond2.text;
-            document.getElementById('st2-cond-icon').innerHTML = cond2.icon;
-        }
-
-        processAndRenderWUHistory(history1, history2);
-        const now = new Date();
-const dateStr = now.toLocaleDateString('cs-CZ');
-const timeStr = now.toLocaleTimeString('cs-CZ');
-
-document.getElementById('last-update').innerText = `${dateStr} ${timeStr}`;
     }
 
+    // Spustit pouze JEDNOU při načtení (bez setInterval)
     document.addEventListener("DOMContentLoaded", () => {
         updateAllData();
-        setInterval(updateAllData, 5 * 60 * 1000);
-        setInterval(updateClock, 1000);
     });
 </script>
 </body>
