@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      TZ: 'Europe/Prague' # Nastaví časové pásmo systému v GitHub Actions
     steps:
       - name: Stáhnutí repozitáře
         uses: actions/checkout@v4
