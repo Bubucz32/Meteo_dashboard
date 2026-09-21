@@ -14,16 +14,30 @@ const PAGES = [
 
 (async () => {
   const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--allow-file-access-from-files' // Povolí CORS a síťové dotazy z file:// protokolu
+    ]
   });
   const page = await browser.newPage();
+
+  // Odchytávání výpisů z konzole přímo v HTML stránce
+  page.on('console', msg => console.log('PROHLÍŽEČ LOG:', msg.text()));
+  
+  // Odchytávání nevychycených chyb v JavaScriptu na stránce
+  page.on('pageerror', err => console.log('PROHLÍŽEČ CHYBA JS:', err.toString()));
+
+  // Odchytávání selhaných síťových požadavků (např. Bad API Key, 404, CORS)
+  page.on('requestfailed', request => {
+    console.log(`PROHLÍŽEČ SÍŤ CHYBA: ${request.url()} - ${request.failure() ? request.failure().errorText : 'neznámá chyba'}`);
+  });
 
   if (!fs.existsSync('out')) {
     fs.mkdirSync('out');
   }
 
   for (const item of PAGES) {
-    // Zkontrolujeme, zda soubor existuje, než ho otevřeme
     if (!fs.existsSync(item.html)) continue;
 
     console.log(`Renderuji: ${item.html}...`);
@@ -37,7 +51,7 @@ const PAGES = [
     const filePath = `file://${path.join(__dirname, item.html)}`;
     await page.goto(filePath, { waitUntil: 'load' });
 
-    // KLÍČOVÝ KROK: Počkáme 4 sekundy na dokončení fetch() dotazů z Weather Underground
+    // Počkáme 4 sekundy na dokončení fetch() dotazů z Weather Underground
     await delay(4000);
 
     await page.screenshot({
