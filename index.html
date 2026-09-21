@@ -28,21 +28,29 @@
     box-sizing: border-box;
 }
 
-html, body {
-    width: 800px;
-    height: 480px;
+*, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
-    padding: 4px 6px;
+    padding: 0;
+}
+
+html {
+    width: 480px;
+    height: 800px;
+    background-color: var(--bg-color);
+}
+
+body {
+    width: 480px;
+    height: 800px;
+    padding: 6px; /* Vnitřní odsazení se nyní započítá DO šířky 480px */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow: hidden;
-}
-
-body {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
 }
 
 header {
