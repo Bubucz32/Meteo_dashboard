@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -7,277 +6,217 @@
     <title>Shrnutí meteostanic</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --border-color: #ffffff;
-            --card-bg: #000000  ;
-            --subtext-color: #aaaaaa;
-            --grid-color: #444444;
-		  }
+:root {
+    --bg-color: #000000;       /* Černé pozadí */
+    --text-color: #ffffff;     /* Bílý text */
+    --border-color: #ffffff;   /* Bílé ohraničení */
+    --card-bg: #000000;
+    --subtext-color: #cccccc;  /* Světle šedá/bílá pro sekundární text */
+    --grid-color: #444444;    
+    --st1-color: #ffffff;     /* Stanice 1 = Bílá */
+    --st2-color: #ff0000;     /* Stanice 2 = Červená */
+}
 
+* {
+    box-sizing: border-box;
+}
 
-        html, body {
-	    html, body {
-  width: 800px;
-  height: 480px;
-            margin: 0;
-            padding: 10px;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
+html, body {
+    width: 800px;
+    height: 480px;
+    margin: 0;
+    padding: 4px 6px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    overflow: hidden;
+}
 
-        @media (min-width: 901px) and (orientation: landscape) {
-            html, body {
-                height: 98vh;
-                overflow: auto;
-            }
-        }
+body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
 
-        body {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1px;
+}
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 8px;
-        }
+.title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-color);
+}
 
-        .title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: linear-gradient(45deg, var(--text-color), var(--text-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+.time {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
 
-        .time {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-/* Kontejner pro grafy na mobilu */
-.chart-container {
-    position: relative;
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+}
+
+.stations-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 3px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background-color: var(--card-bg);
+}
+
+.card.st1 { border-top: 3px solid var(--st1-color); }
+.card.st2 { border-top: 3px solid var(--st2-color); }
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card.st1 .card-title { color: var(--st1-color); }
+.card.st2 .card-title { color: var(--st2-color); }
+
+.wind-arrow {
+    display: inline-block;
+    font-weight: bold;
+    font-size: 1em;
+    transition: transform 0.3s ease;
+}
+
+.data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 65px;
+    gap: 1px 4px;
+    align-items: center;
+}
+
+.weather-icon-box {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--border-color);
+    padding-left: 2px;
+}
+
+.big-svg-container {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Vynucení bílé barvy čar pro SVG ikony v tmavém režimu */
+.big-svg-container svg {
     width: 100%;
-    height: 250px; /* Stabilní výška pro mobilní displeje */
-    margin-bottom: 15px;
+    height: 100%;
+    overflow: visible;
+    stroke: #ffffff !important;
 }
 
-@media (max-width: 600px) {
-    .chart-container {
-        height: 200px; /* Mírně kompaktnější výška na malých telefonech */
-    }
+.value-group {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-        main {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 5px;
-            flex-grow: 1;
-            min-height: 0;
-        }
+.value-group.full-width {
+    grid-column: span 3;
+}
 
-        .stations-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
+.label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--subtext-color);
+    letter-spacing: 0.2px;
+}
 
-        .card {
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background-color: var(--card-bg);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+.value {
+    font-size: 0.9rem;
+    font-weight: bold;
+    line-height: 1;
+}
 
-        .card.st1 { border-top: 4px solid var(--st1-color); }
-        .card.st2 { border-top: 4px solid var(--st2-color); }
+.value-large {
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-color);
+}
 
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 6px;
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+.unit {
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--subtext-color);
+}
 
-        .card.st1 .card-title { color: var(--st1-color); }
-        .card.st2 .card-title { color: var(--st2-color); }
+.tendency {
+    font-size: 0.85rem;
+    font-weight: bold;
+}
 
-        .wind-arrow {
-            display: inline-block;
-            font-weight: bold;
-            font-size: 1.2em;
-            transition: transform 0.3s ease;
-            color: var(--accent-yellow);
-        }
+/* MŘÍŽKA GRAFŮ */
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+}
 
-        .data-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px 12px;
-        }
+.chart-box {
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background-color: var(--card-bg);
+    overflow: hidden;
+}
 
-        .weather-icon-box {
-            grid-column: 3;
-            grid-row: 1 / span 3;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-left: 1px solid var(--grid-color);
-            padding-left: 8px;
-        }
-
-        .big-svg-container {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .big-svg-container svg {
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-        }
-
-        .value-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .value-group.full-width {
-            grid-column: span 3;
-        }
-
-        .label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--subtext-color);
-            letter-spacing: 0.5px;
-        }
-
-        .value {
-            font-size: 1.7rem;
-            font-weight: bold;
-            line-height: 1.1;
-        }
-
-        .value-large {
-            font-size: 2.2rem;
-            font-weight: 800;
-            line-height: 1.1;
-            color: var(--text-color);
-        }
-
-        .unit {
-            font-size: 1.1rem;
-            font-weight: normal;
-            color: var(--subtext-color);
-        }
-
-        .tendency {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-green);
-        }
-
-        .highlight-rain { color: var(--accent-rain); }
-        .highlight-solar { color: var(--accent-yellow); }
-
-        /* MŘÍŽKA GRAFŮ - ŠÍŘKOVÉ ZOBRAZENÍ */
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 12px;
-            flex: 1;
-            min-height: 250;
-        }
-
-        .chart-box {
-            position: relative;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 8px;
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-            background-color: var(--card-bg);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            overflow: hidden;
-        }
-
-        footer {
-            border-top: 1px solid var(--border-color);
-            margin-top: 5px;
-            padding-top: 4px;
-            text-align: right;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: var(--subtext-color);
-        }
-
-        .theme-btn {
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .theme-btn:hover {
-            border-color: var(--st2-color);
-            color: var(--st2-color);
-        }
-
-        /* --- ZOBRAZENÍ NA VÝŠKU (PORTRAIT / < 900px) --- */
-        @media (max-width: 900px), (orientation: portrait) {
-            body {
-                overflow-y: auto;
-            }
-
-            .stations-row {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-container {
-                display: flex;
-                flex-direction: column;
-                height: auto;
-                gap: 15px;
-            }
-
-            .chart-box {
-                height: 250px;
-                width: 100%;
-            }
-        }
+footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1px;
+    text-align: right;
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: var(--subtext-color);
+}
     </style>
 </head>
 <body>
@@ -290,116 +229,125 @@
     <main>
         <div class="stations-row">
             <!-- STANICE 1 -->
-            <section class="card">
-                <div class="card-title" id="st1-title">Stanice 1</div>
-                
+            <section class="card st1">
+                <div class="card-title" id="st1-title">Kačerov</div>
                 <div class="data-grid">
+                    <!-- 1. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Teplota</div>
-                        <div class="value-large"><span id="st1-temp">--</span> <span class="unit">°C</span></div>
+                        <span class="label">Teplota:</span>
+                        <span class="value-large"><span id="st1-temp">--</span><span class="unit">°C</span></span>
                     </div>
                     <div class="value-group">
-                        <div class="label">SLUNEČNÍ ZÁŘENÍ</div>
-                        <div class="value"><span id="st1-solar">--</span> <span class="unit">W/m²</span></div>
+                        <span class="label">Záření:</span>
+                        <span class="value"><span id="st1-solar">--</span> <span class="unit">W/m²</span></span>
                     </div>
 
+                    <!-- 3. SLOUPEC - IKONA -->
                     <div class="weather-icon-box">
-                        <div class="label" id="st1-cond-text" style="font-size: 1.1rem; margin-bottom: 4px; text-transform: uppercase;">--</div>
+                        <div class="label" id="st1-cond-text" style="font-size: 0.75rem; margin-bottom: 2px; text-transform: uppercase;">--</div>
                         <div id="st1-cond-icon" class="big-svg-container"></div>
                     </div>
 
+                    <!-- 2. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Vlhkost</div>
-                        <div class="value"><span id="st1-humidity">--</span> <span class="unit">%</span></div>
+                        <span class="label">Vlhkost:</span>
+                        <span class="value"><span id="st1-humidity">--</span><span class="unit">%</span></span>
                     </div>
                     <div class="value-group">
-                        <div class="label">Tlak a tendence</div>
-                        <div class="value" style="font-size: 1.4rem;">
-                            <span id="st1-pressure">--</span> <span style="font-size: 0.9rem;">hPa</span>
+                        <span class="label">Tlak:</span>
+                        <span class="value" style="font-size: 0.85rem;">
+                            <span id="st1-pressure">--</span><span class="unit">hPa</span>
                             <span id="st1-tendency" class="tendency">--</span>
-                        </div>
+                        </span>
                     </div>
 
+                    <!-- 3. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Vítr (Směr / Náraz)</div>
-                        <div class="value" style="font-size: 1.1rem;">
+                        <span class="label">Vítr:</span>
+                        <span class="value" style="font-size: 0.8rem;">
                             <span id="st1-wind-dir">--</span> 
                             <span id="st1-wind-arrow" class="wind-arrow">↑</span> 
-                            <span id="st1-wind-speed">--</span> (<span id="st1-wind-gust">--</span>) <span style="font-size: 0.8rem;">km/h</span>
-                        </div>    
+                            <span id="st1-wind-speed">--</span>(<span id="st1-wind-gust">--</span>)
+                        </span>    
                     </div>
                     <div class="value-group">
-                        <div class="label">UV Index</div>
-                        <div class="value"><span id="st1-uv">--</span></div>
+                        <span class="label">UV:</span>
+                        <span class="value"><span id="st1-uv">--</span></span>
                     </div>
 
+                    <!-- 4. ŘÁDEK -->
                     <div class="value-group full-width">
-                        <div class="label">Srážky (Aktuálně / Dnes / Měsíc)</div>
-                        <div class="value" style="font-size: 1.2rem;">
+                        <span class="label">Srážky:</span>
+                        <span class="value" style="font-size: 0.8rem;">
                             <span id="st1-precip-rate">--</span> mm/h | 
                             <span id="st1-precip-today">--</span> / 
-                            <span id="st1-precip-month">--</span> <span style="font-size: 0.8rem;">mm</span>
-                        </div>
+                            <span id="st1-precip-month">--</span> <span class="unit">mm</span>
+                        </span>
                     </div>
                 </div>
             </section>
 
             <!-- STANICE 2 -->
-            <section class="card">
-                <div class="card-title" id="st2-title">Stanice 2</div>
-
+            <section class="card st2">
+                <div class="card-title" id="st2-title">Lipník</div>
                 <div class="data-grid">
+                    <!-- 1. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Teplota</div>
-                        <div class="value-large"><span id="st2-temp">--</span> <span class="unit">°C</span></div>
+                        <span class="label">Teplota:</span>
+                        <span class="value-large"><span id="st2-temp">--</span><span class="unit">°C</span></span>
                     </div>
                     <div class="value-group">
-                        <div class="label">SLUNEČNÍ ZÁŘENÍ</div>
-                        <div class="value"><span id="st2-solar">--</span> <span class="unit">W/m²</span></div>
+                        <span class="label">Záření:</span>
+                        <span class="value"><span id="st2-solar">--</span> <span class="unit">W/m²</span></span>
                     </div>
 
+                    <!-- 3. SLOUPEC - IKONA -->
                     <div class="weather-icon-box">
-                        <div class="label" id="st2-cond-text" style="font-size: 1.1rem; margin-bottom: 4px; text-transform: uppercase;">--</div>
+                        <div class="label" id="st2-cond-text" style="font-size: 0.75rem; margin-bottom: 2px; text-transform: uppercase;">--</div>
                         <div id="st2-cond-icon" class="big-svg-container"></div>
                     </div>
 
+                    <!-- 2. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Vlhkost</div>
-                        <div class="value"><span id="st2-humidity">--</span> <span class="unit">%</span></div>
+                        <span class="label">Vlhkost:</span>
+                        <span class="value"><span id="st2-humidity">--</span><span class="unit">%</span></span>
                     </div>
                     <div class="value-group">
-                        <div class="label">Tlak a tendence</div>
-                        <div class="value" style="font-size: 1.4rem;">
-                            <span id="st2-pressure">--</span> <span style="font-size: 0.9rem;">hPa</span>
+                        <span class="label">Tlak:</span>
+                        <span class="value" style="font-size: 0.85rem;">
+                            <span id="st2-pressure">--</span><span class="unit">hPa</span>
                             <span id="st2-tendency" class="tendency">--</span>
-                        </div>
+                        </span>
                     </div>
 
+                    <!-- 3. ŘÁDEK -->
                     <div class="value-group">
-                        <div class="label">Vítr (Směr / Náraz)</div>
-                        <div class="value" style="font-size: 1.1rem;">
+                        <span class="label">Vítr:</span>
+                        <span class="value" style="font-size: 0.8rem;">
                             <span id="st2-wind-dir">--</span> 
                             <span id="st2-wind-arrow" class="wind-arrow">↑</span> 
-                            <span id="st2-wind-speed">--</span> (<span id="st2-wind-gust">--</span>) <span style="font-size: 0.8rem;">km/h</span>
-                        </div>    
+                            <span id="st2-wind-speed">--</span>(<span id="st2-wind-gust">--</span>)
+                        </span>    
                     </div>
                     <div class="value-group">
-                        <div class="label">UV Index</div>
-                        <div class="value"><span id="st2-uv">--</span></div>
+                        <span class="label">UV:</span>
+                        <span class="value"><span id="st2-uv">--</span></span>
                     </div>
 
+                    <!-- 4. ŘÁDEK -->
                     <div class="value-group full-width">
-                        <div class="label">Srážky (Aktuálně / Dnes / Měsíc)</div>
-                        <div class="value" style="font-size: 1.2rem;">
+                        <span class="label">Srážky:</span>
+                        <span class="value" style="font-size: 0.8rem;">
                             <span id="st2-precip-rate">--</span> mm/h | 
                             <span id="st2-precip-today">--</span> / 
-                            <span id="st2-precip-month">--</span> <span style="font-size: 0.8rem;">mm</span>
-                        </div>
+                            <span id="st2-precip-month">--</span> <span class="unit">mm</span>
+                        </span>
                     </div>
                 </div>
             </section>
         </div>
 
+        <!-- KONTEJNER PRO GRAFY -->
         <div class="charts-container">
             <div class="chart-box"><canvas id="tempChart"></canvas></div>
             <div class="chart-box"><canvas id="humidityChart"></canvas></div>
@@ -411,9 +359,11 @@
     <footer>
         Poslední aktualizace: <span id="last-update">Nikdy</span>
     </footer>
-<script>
-         // ==================== KONFIGURACE ====================
+    <script>
+    
+        // ==================== KONFIGURACE ====================
         const WU_API_KEY = "__WU_API_KEY_GITHUB__"; //Pro github zašifrováno
+
         
         const ST1_ID = "IPRAGU288";
         const ST1_NAME = "Kačerov";
@@ -421,20 +371,16 @@
         const ST2_ID = "ILIPNK20";
         const ST2_NAME = "Lipník";
         // =====================================================
-
     const chartInstances = {};
 
 
-    // PŘIDÁNO: Správné vynucené překreslení při změně orientace/velikosti
     window.addEventListener('resize', () => {
         Object.values(chartInstances).forEach(chart => {
-            if (chart) {
-                chart.resize();
-            }
+            if (chart) chart.resize();
         });
     });
 
-    function updateClock() {
+      function updateClock() {
     const now = new Date();
     const dateStr = now.toLocaleDateString('cs-CZ'); // např. 20. 9. 2026
     const hours = String(now.getHours()).padStart(2, '0');
@@ -442,6 +388,7 @@
     
     document.getElementById('clock').innerText = `${dateStr} Aktualizováno v: ${hours}:${minutes}`;
 }
+
     function degToCompass(num) {
         if (num === null || num === undefined) return "--";
         const val = Math.floor((num / 22.5) + 0.5);
@@ -462,11 +409,11 @@
 
     /* --- SVG IKONY --- */
     const EINK_ICONS = {
-        sun: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
-        cloudSun: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41"/><path d="M15.9 11.5a4 4 0 0 0-7.3-2.2 5 5 0 0 0-8.6 4.7 3.5 3.5 0 0 0 3.5 3.5h11a3 3 0 0 0 1.4-5.5z"/></svg>`,
-        cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
-        rain: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v8M8 13v8M12 15v8"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>`,
-        moon: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+        sun: `<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+        cloudSun: `<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41"/><path d="M15.9 11.5a4 4 0 0 0-7.3-2.2 5 5 0 0 0-8.6 4.7 3.5 3.5 0 0 0 3.5 3.5h11a3 3 0 0 0 1.4-5.5z"/></svg>`,
+        cloud: `<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
+        rain: `<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13v8M8 13v8M12 15v8"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>`,
+        moon: `<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
     };
 
     function estimateWeatherCondition(obs, historyArray) {
@@ -482,7 +429,6 @@
         return { text: "Noc", icon: EINK_ICONS.moon };
     }
 
- 
    // 3. Měsíční přehled (odstraněn cache-buster &_=)
 async function fetchPrecipSummary(stationId) {
     if (!WU_API_KEY || WU_API_KEY.includes("DOPLŇTE")) return { month: '--' };
@@ -578,136 +524,118 @@ async function fetchStationHistory(stationId) {
         return [];
     }
 }
-
-    // ÚPRAVA: Dynamická detekce mobilu v reálném čase
-    function createBaseOptions(titleText, beginAtZero = true, unitSuffix = "") {
-        return {
-            responsive: true,
-            maintainAspectRatio: false,
-            resizeDelay: 100,
-            animation: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                title: { 
-                    display: true, 
-                    text: titleText, 
-                    color: '#ffffff', 
-                    font: (ctx) => ({ size: ctx.chart.width < 500 ? 11 : 13, weight: 'bold' }) 
-                },
-                legend: { 
-                    labels: { 
-                        color: '#ffffff', 
-                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 10 : 11, weight: 'bold' }), 
-                        boxWidth: 15 
-                    } 
-                },
-                tooltip: {
-                    enabled: true,
-                    mode: 'index',
-                    intersect: false,
-                    padding: 6,
-                    backgroundColor: '#1e293b',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    callbacks: {
-                        title: (context) => `Čas: ${context[0].label}`,
-                        label: (context) => {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            return context.parsed.y !== null ? label + context.parsed.y + ' ' + unitSuffix : label + '--';
+   function createBaseOptions(titleText, beginAtZero = true, unitSuffix = "") {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        resizeDelay: 100,
+        animation: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            title: { 
+                display: true, 
+                text: titleText, 
+                color: '#ffffff', // Bílý nadpis grafu
+                font: { size: 10, weight: 'bold' },
+                padding: { top: 2, bottom: 2 }
+            },
+            legend: { 
+                display: true,
+                position: 'top',
+                labels: { 
+                    color: '#ffffff', // Bílý text legendy
+                    font: { size: 9, weight: 'bold' }, 
+                    boxWidth: 12,
+                    padding: 4
+                } 
+            },
+            tooltip: { enabled: false }
+        },
+        scales: {
+            x: { 
+                type: 'category',
+                grid: { display: true, color: '#333333', drawTicks: false }, 
+                ticks: { 
+                    color: '#ffffff', // Bílá čísla na ose X
+                    font: { size: 8, weight: 'bold' },
+                    autoSkip: false,
+                    maxRotation: 0,
+                    minRotation: 0,
+                    callback: function(val, index) {
+                        const label = this.getLabelForValue(val);
+                        if (!label) return '';
+                        if (label.endsWith(':00')) {
+                            const hour = parseInt(label.split(':')[0], 10);
+                            if (hour % 3 === 0) return label;
                         }
+                        return null;
                     }
                 }
             },
-            scales: {
-                x: { 
-                    type: 'category',
-                    grid: { display: true, color: '#334155', tickColor: 'transparent' }, 
-                    ticks: { 
-                        color: '#94a3b8', 
-                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 9 : 11, weight: 'bold' }),
-                        autoSkip: false,
-                        maxRotation: 0,
-                        minRotation: 0,
-                        callback: function(val, index) {
-                            const label = this.getLabelForValue(val);
-                            if (!label) return '';
-                            if (label.endsWith(':00')) {
-                                const hour = parseInt(label.split(':')[0], 10);
-                                const isSmall = this.chart.width < 500;
-                                const step = isSmall ? 4 : 2;
-                                if (hour % step === 0) return label;
-                            }
-                            return null;
-                        }
-                    }
-                },
-                y: { 
-                    beginAtZero: beginAtZero, 
-                    grid: { display: true, color: '#334155' },
-                    ticks: { 
-                        color: '#94a3b8', 
-                        font: (ctx) => ({ size: ctx.chart.width < 500 ? 9 : 11, weight: 'bold' }) 
-                    } 
-                }
+            y: { 
+                beginAtZero: beginAtZero, 
+                grid: { display: true, color: '#333333' },
+                ticks: { 
+                    color: '#ffffff', // Bílá čísla na ose Y
+                    font: { size: 8, weight: 'bold' },
+                    padding: 2
+                } 
             }
-        };
-    }
+        }
+    };
+}
 
-    function renderLineChart(canvasId, labels, title, data1, data2, beginAtZero = true, unitSuffix = "") {
-        const ctx = document.getElementById(canvasId)?.getContext('2d');
-        if (!ctx) return;
-        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+function renderLineChart(canvasId, labels, title, data1, data2, beginAtZero = true, unitSuffix = "") {
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
 
-        chartInstances[canvasId] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { 
-                        label: ST1_NAME, 
-                        data: data1, 
-                        borderColor: '#ffffff', 
-                        backgroundColor: '#ffffff', 
-                        borderWidth: 2, 
-                        pointRadius: 0, 
-                        pointHoverRadius: 6, 
-                        spanGaps: true 
-                    },
-                    { 
-                        label: ST2_NAME, 
-                        data: data2, 
-                        borderColor: '#ffffff', 
-                        backgroundColor: '#ffffff', 
-                        borderWidth: 1.5, 
-                        borderDash: [5, 4], 
-                        pointRadius: 0, 
-                        pointHoverRadius: 6, 
-                        spanGaps: true 
-                    }
-                ]
-            },
-            options: createBaseOptions(title, beginAtZero, unitSuffix)
-        });
-    }
+    chartInstances[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { 
+                    label: ST1_NAME, 
+                    data: data1, 
+                    borderColor: '#ffffff', // Bílá čára pro Stanici 1
+                    backgroundColor: '#ffffff', 
+                    borderWidth: 2, 
+                    pointRadius: 0, 
+                    spanGaps: true 
+                },
+                { 
+                    label: ST2_NAME, 
+                    data: data2, 
+                    borderColor: '#ff0000', // Červená čára pro Stanici 2
+                    backgroundColor: '#ff0000', 
+                    borderWidth: 2, 
+                    pointRadius: 0, 
+                    spanGaps: true 
+                }
+            ]
+        },
+        options: createBaseOptions(title, beginAtZero, unitSuffix)
+    });
+}
 
-    function renderBarChart(canvasId, labels, title, data1, data2, unitSuffix = "") {
-        const ctx = document.getElementById(canvasId)?.getContext('2d');
-        if (!ctx) return;
-        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+function renderBarChart(canvasId, labels, title, data1, data2, unitSuffix = "") {
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+    if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
 
-        chartInstances[canvasId] = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: ST1_NAME, data: data1, backgroundColor: '#ffffff' },
-                    { label: ST2_NAME, data: data2, backgroundColor: '#B8B8B8' }
-                ]
-            },
-            options: createBaseOptions(title, true, unitSuffix)
-        });
-    }
+    chartInstances[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: ST1_NAME, data: data1, backgroundColor: '#ffffff' }, // Bílé sloupce
+                { label: ST2_NAME, data: data2, backgroundColor: '#ff0000' }  // Červené sloupce
+            ]
+        },
+        options: createBaseOptions(title, true, unitSuffix)
+    });
+}
 
     function processAndRenderWUHistory(hist1, hist2) {
         const fullDayLabels = [];
@@ -733,7 +661,8 @@ async function fetchStationHistory(stationId) {
             const mm = String(copy.getMinutes()).padStart(2, '0');
             return `${hh}:${mm}`;
         }
-function extractTimeSlot(item) {
+
+     function extractTimeSlot(item) {
     // 1. Přednostně použijeme UTC Epoch čas, který převedeme na LOKÁLNÍ čas prohlížeče
     if (item.epoch || item.valid_time_gmt) {
         const ep = item.epoch || item.valid_time_gmt;
@@ -754,21 +683,38 @@ function extractTimeSlot(item) {
     
     return null;
 }
+
         function extractMetrics(item) {
             if (!item) return null;
             const imp = item.imperial || {};
+            const met = item.metric || {}; // [ZMĚNA]: Přidána podpora i pro 'metric' blok z API
             
             let tempF = imp.tempAvg ?? imp.tempHigh ?? imp.tempLow ?? imp.temp ?? item.temp ?? null;
-            let tempC = (tempF !== null && !isNaN(tempF)) ? parseFloat(((tempF - 32) * (5 / 9)).toFixed(1)) : null;
+            let tempC = null;
+            if (tempF !== null && !isNaN(tempF)) {
+                tempC = parseFloat(((tempF - 32) * (5 / 9)).toFixed(1));
+            } else if (met.tempAvg !== undefined || met.temp !== undefined) {
+                tempC = met.tempAvg ?? met.temp;
+            }
 
             let pressInHg = imp.pressureMax ?? imp.pressureMin ?? imp.pressure ?? item.pressure ?? null;
-            let pressHpa = (pressInHg !== null && !isNaN(pressInHg)) ? parseFloat((pressInHg * 33.8639).toFixed(1)) : null;
+            let pressHpa = null;
+            if (pressInHg !== null && !isNaN(pressInHg)) {
+                pressHpa = parseFloat((pressInHg * 33.8639).toFixed(1));
+            } else if (met.pressure !== undefined) {
+                pressHpa = met.pressure;
+            }
 
-            let h = item.humidityAvg ?? item.humidity ?? imp.humidity ?? null;
+            let h = item.humidityAvg ?? item.humidity ?? imp.humidity ?? met.humidity ?? null;
             let hum = h !== null ? parseInt(h, 10) : null;
 
-            let precipIn = imp.precipTotal ?? imp.precipRate ?? item.precipTotal ?? 0;
-            let precipMm = precipIn !== null ? parseFloat((precipIn * 25.4).toFixed(1)) : 0;
+            let precipIn = imp.precipTotal ?? imp.precipRate ?? item.precipTotal ?? null;
+            let precipMm = 0;
+            if (precipIn !== null && !isNaN(precipIn)) {
+                precipMm = parseFloat((precipIn * 25.4).toFixed(1));
+            } else if (met.precipTotal !== undefined || met.precipRate !== undefined) {
+                precipMm = met.precipTotal ?? met.precipRate ?? 0;
+            }
 
             return { temp: tempC, humidity: hum, pressure: pressHpa, precip: precipMm };
         }
@@ -861,7 +807,7 @@ function extractTimeSlot(item) {
         }
 
         processAndRenderWUHistory(history1, history2);
-const now = new Date();
+        const now = new Date();
 const dateStr = now.toLocaleDateString('cs-CZ');
 const timeStr = now.toLocaleTimeString('cs-CZ');
 
@@ -875,4 +821,4 @@ document.getElementById('last-update').innerText = `${dateStr} ${timeStr}`;
     });
 </script>
 </body>
-</html>
+</html> 	

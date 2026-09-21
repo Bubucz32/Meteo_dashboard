@@ -6,33 +6,26 @@
     <title>Shrnutí meteostanic</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
- :root {
+:root {
     --bg-color: #ffffff;
     --text-color: #000000;
     --border-color: #000000;
     --card-bg: #ffffff;
     --subtext-color: #444444;
-    --grid-color: #e0e0e0;
-    --st1-color: #000000; /* Stanice 1 = Černá */
-    --st2-color: #ff0000; /* Stanice 2 = Červená */
+    --grid-color: #cccccc;
+    --st1-color: #000000;
+    --st2-color: #ff0000;
 }
-
-/* Zvýraznění karet barevným horním okrajem */
-.card.st1 { border-top: 3px solid var(--st1-color); }
-.card.st2 { border-top: 3px solid var(--st2-color); }
-
-.card.st1 .card-title { color: var(--st1-color); }
-.card.st2 .card-title { color: var(--st2-color); }
 
 * {
     box-sizing: border-box;
 }
 
 html, body {
-    width: 800px;
-    height: 480px;
+    width: 480px;
+    height: 800px;
     margin: 0;
-    padding: 4px 6px;
+    padding: 6px 8px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -42,19 +35,19 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
 }
 
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 2px;
 }
 
 .title {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -69,37 +62,44 @@ header {
 main {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     flex: 1;
     min-height: 0;
 }
 
+/* KARTY STANIC POD SEBOU */
 .stations-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 6px;
 }
 
 .card {
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 3px 6px;
+    padding: 4px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     background-color: var(--card-bg);
 }
 
+.card.st1 { border-top: 3px solid var(--st1-color); }
+.card.st2 { border-top: 3px solid var(--st2-color); }
+
 .card-title {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: bold;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1px;
+    padding-bottom: 2px;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.card.st1 .card-title { color: var(--st1-color); }
+.card.st2 .card-title { color: var(--st2-color); }
 
 .wind-arrow {
     display: inline-block;
@@ -110,8 +110,8 @@ main {
 
 .data-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 65px;
-    gap: 1px 4px;
+    grid-template-columns: 1fr 1fr 70px;
+    gap: 2px 6px;
     align-items: center;
 }
 
@@ -123,12 +123,12 @@ main {
     align-items: center;
     justify-content: center;
     border-left: 1px solid var(--grid-color);
-    padding-left: 2px;
+    padding-left: 4px;
 }
 
 .big-svg-container {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -154,7 +154,7 @@ main {
 }
 
 .label {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     font-weight: 700;
     color: var(--subtext-color);
@@ -162,34 +162,33 @@ main {
 }
 
 .value {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: bold;
     line-height: 1;
 }
 
 .value-large {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 800;
     line-height: 1;
     color: var(--text-color);
 }
 
 .unit {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: normal;
     color: var(--subtext-color);
 }
 
 .tendency {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: bold;
 }
 
-/* MŘÍŽKA GRAFŮ */
+/* 4 GRAFY POD SEBOU */
 .charts-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 4px;
     flex: 1;
     min-height: 0;
@@ -201,7 +200,7 @@ main {
     border-radius: 4px;
     padding: 2px;
     width: 100%;
-    height: 100%;
+    flex: 1;
     box-sizing: border-box;
     background-color: var(--card-bg);
     overflow: hidden;
@@ -209,7 +208,7 @@ main {
 
 footer {
     border-top: 1px solid var(--border-color);
-    padding-top: 1px;
+    padding-top: 2px;
     text-align: right;
     font-size: 0.65rem;
     font-weight: bold;
@@ -522,7 +521,7 @@ async function fetchStationHistory(stationId) {
         return [];
     }
 }
-    function createBaseOptions(titleText, beginAtZero = true, unitSuffix = "") {
+   function createBaseOptions(titleText, beginAtZero = true, unitSuffix = "") {
     return {
         responsive: true,
         maintainAspectRatio: false,
@@ -535,7 +534,7 @@ async function fetchStationHistory(stationId) {
                 text: titleText, 
                 color: '#000000', 
                 font: { size: 10, weight: 'bold' },
-                padding: { top: 2, bottom: 2 }
+                padding: { top: 1, bottom: 1 }
             },
             legend: { 
                 display: true,
@@ -543,11 +542,11 @@ async function fetchStationHistory(stationId) {
                 labels: { 
                     color: '#000000', 
                     font: { size: 9, weight: 'bold' }, 
-                    boxWidth: 12,
-                    padding: 4
+                    boxWidth: 10,
+                    padding: 2
                 } 
             },
-            tooltip: { enabled: false } // Vypnuto pro statický e-Paper / displej
+            tooltip: { enabled: false }
         },
         scales: {
             x: { 
@@ -562,10 +561,9 @@ async function fetchStationHistory(stationId) {
                     callback: function(val, index) {
                         const label = this.getLabelForValue(val);
                         if (!label) return '';
-                        // Zobrazit popisky na ose X přesně každé 3 hodiny (00:00, 03:00, 06:00, 09:00, ...)
                         if (label.endsWith(':00')) {
                             const hour = parseInt(label.split(':')[0], 10);
-                            if (hour % 3 === 0) return label;
+                            if (hour % 4 === 0) return label; // Každé 4 hodiny pro čistý vzhled
                         }
                         return null;
                     }
@@ -594,24 +592,8 @@ function renderLineChart(canvasId, labels, title, data1, data2, beginAtZero = tr
         data: {
             labels: labels,
             datasets: [
-                { 
-                    label: ST1_NAME, 
-                    data: data1, 
-                    borderColor: '#000000', // Černá pro Stanici 1
-                    backgroundColor: '#000000', 
-                    borderWidth: 2, 
-                    pointRadius: 0, 
-                    spanGaps: true 
-                },
-                { 
-                    label: ST2_NAME, 
-                    data: data2, 
-                    borderColor: '#ff0000', // Červená pro Stanici 2
-                    backgroundColor: '#ff0000', 
-                    borderWidth: 2, 
-                    pointRadius: 0, 
-                    spanGaps: true 
-                }
+                { label: ST1_NAME, data: data1, borderColor: '#000000', backgroundColor: '#000000', borderWidth: 2, pointRadius: 0, spanGaps: true },
+                { label: ST2_NAME, data: data2, borderColor: '#ff0000', backgroundColor: '#ff0000', borderWidth: 2, pointRadius: 0, spanGaps: true }
             ]
         },
         options: createBaseOptions(title, beginAtZero, unitSuffix)
@@ -628,13 +610,14 @@ function renderBarChart(canvasId, labels, title, data1, data2, unitSuffix = "") 
         data: {
             labels: labels,
             datasets: [
-                { label: ST1_NAME, data: data1, backgroundColor: '#000000' }, // Černá
-                { label: ST2_NAME, data: data2, backgroundColor: '#ff0000' }  // Červená
+                { label: ST1_NAME, data: data1, backgroundColor: '#000000' },
+                { label: ST2_NAME, data: data2, backgroundColor: '#ff0000' }
             ]
         },
         options: createBaseOptions(title, true, unitSuffix)
     });
 }
+
 
     function processAndRenderWUHistory(hist1, hist2) {
         const fullDayLabels = [];
