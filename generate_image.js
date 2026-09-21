@@ -9,8 +9,8 @@ const PAGES = [
   { html: 'index_dark.html', output: 'index_dark_landscape.png', width: 800, height: 480 },
 
   // Varianta na výšku (480x800)
-//  { html: 'index_portrait.html', output: 'index_portrait.png', width: 480, height: 800 },
-  //{ html: 'index_dark_portrait.html', output: 'index_dark_portrait.png', width: 480, height: 800 }
+  { html: 'index_portrait.html', output: 'index_portrait.png', width: 480, height: 800 },
+  { html: 'index_dark_portrait.html', output: 'index_dark_portrait.png', width: 480, height: 800 }
 ];
 
 (async () => {
