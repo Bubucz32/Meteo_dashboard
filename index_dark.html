@@ -17,25 +17,29 @@
     --st2-color: #ff0000;     /* Stanice 2 = Červená */
 }
 
-* {
+*, *::before, *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-html, body {
+html {
     width: 800px;
     height: 480px;
-    margin: 0;
-    padding: 4px 6px;
+    background-color: var(--bg-color);
+}
+
+body {
+    width: 800px;
+    height: 480px;
+    padding: 6px; /* Vnitřní odsazení se nyní započítá DO šířky 480px */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow: hidden;
-}
-
-body {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
 }
 
 header {
