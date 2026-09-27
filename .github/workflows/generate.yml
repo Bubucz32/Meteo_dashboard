@@ -36,7 +36,22 @@ jobs:
       - name: Spuštění renderování HTML do PNG
         run: node generate_image.js
 
-      - name: Publikace obrázků na GitHub Pages
+      # ========================================================================
+      # NOVÉ KROKY PRO PŘEVOD PNG NA BINÁRNÍ DATA PRO E-PAPER
+      # ========================================================================
+      - name: Příprava Pythonu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Instalace Pillow (Image processing)
+        run: pip install Pillow
+
+      - name: Převod PNG do binárního formátu pro displej
+        run: python convert.py
+      # ========================================================================
+
+      - name: Publikace obrázků a binárních dat na GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
