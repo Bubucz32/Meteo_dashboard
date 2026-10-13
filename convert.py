@@ -11,12 +11,14 @@ BUF_SIZE = (TARGET_WIDTH * TARGET_HEIGHT) // 8  # Přesně 48 000 bytů pro kaž
 def convert_png_to_bin(png_path, bin_path):
     img = Image.open(png_path).convert('RGB')
     
-    # Pokud jde o orientaci na výšku (Portrait 480x800), otočíme obrázek o 90° doprava,
-    # aby fyzicky odpovídal displeji 800x480.
-    if img.width == 480 and img.height == 800:
-        print(f" Detekován Portrait (480x800), otáčím o 270° na landscape 800x480...")
-        img = img.rotate(270, expand=True)
-
+    # Původní detekce otáčela obrázek při 480x800. 
+    # Jelikož chceme čistý Landscape (800x480), upravíme logiku rotace:
+    if img.width == 800 and img.height == 480:
+        print(f" Detekován správný Landscape (800x480), bez rotace.")
+        # Žádná rotace není potřeba
+    elif img.width == 480 and img.height == 800:
+        print(f" Detekován Portrait (480x800), otáčím o 90° doprava na landscape...")
+        img = img.rotate(90, expand=True) # Změněno z 270 na 90 nebo 270 podle potřeby
     # Zajištění přesných rozměrů 800x480
     if img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
         img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
