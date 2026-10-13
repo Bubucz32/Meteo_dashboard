@@ -34,8 +34,8 @@ def convert_png_to_bin(png_path, bin_path):
             r, g, b = pixels[x, y]
 
             byte_idx = (y * ROW_BYTES) + (x // 8)
-            bit_pos = x % 8
-
+            bit_pos = 7 - (x % 8)
+            
             # Detekce červené barvy
             if r > 140 and g < 90 and b < 90:
                 red_buffer[byte_idx] |= (1 << bit_pos)  # Červená aktivní
