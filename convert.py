@@ -5,21 +5,22 @@ import glob
 # Cílové fyzické rozlišení E-Paper displeje (vždy 800x480 pixelů)
 TARGET_WIDTH = 800
 TARGET_HEIGHT = 480
-BUF_SIZE = (TARGET_WIDTH * TARGET_HEIGHT) // 8  # Přesně 48 000 bytů pro každý buffer
+
+# Paměťový řádek (stride) zarovnaný na 816 pixelů (102 bajtů), 
+# aby řadič displeje správně zarovnal okraje bez posouvání.
+ROW_BYTES = 102  
+BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 102 * 480 = 48 960 bytů na jeden buffer
 
 
 def convert_png_to_bin(png_path, bin_path):
     img = Image.open(png_path).convert('RGB')
     
-    # Původní detekce otáčela obrázek při 480x800. 
-    # Jelikož chceme čistý Landscape (800x480), upravíme logiku rotace:
-    if img.width == 800 and img.height == 480:
-        print(f" Detekován správný Landscape (800x480), bez rotace.")
-        # Žádná rotace není potřeba
-    elif img.width == 480 and img.height == 800:
+    # Detekce orientace a případná rotace
+    if img.width == 480 and img.height == 800:
         print(f" Detekován Portrait (480x800), otáčím o 90° doprava na landscape...")
-        img = img.rotate(90, expand=True) # Změněno z 270 na 90 nebo 270 podle potřeby
-    # Zajištění přesných rozměrů 800x480
+        img = img.rotate(90, expand=True)
+
+    # Zajištění rozměrů 800x480
     if img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
         img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
 
@@ -37,7 +38,8 @@ def convert_png_to_bin(png_path, bin_path):
         for x in range(TARGET_WIDTH):
             r, g, b = pixels[x, y]
 
-            byte_idx = (y * (TARGET_WIDTH // 8)) + (x // 8)
+            # Výpočet pozice s respektováním širšího paměťového řádku (102 bajtů)
+            byte_idx = (y * ROW_BYTES) + (x // 8)
             bit_pos = 7 - (x % 8)
 
             # 1. Detekce ČERVENÉ barvy
@@ -54,7 +56,7 @@ def convert_png_to_bin(png_path, bin_path):
                 else:
                     bw_buffer[byte_idx] |= (1 << bit_pos)  # BW = 1 (Bílá)
 
-    # Zápis obou bufferů (48 kB + 48 kB = 96 kB) do jednoho .bin souboru
+    # Zápis obou bufferů do jednoho .bin souboru (celkem ~97.9 kB)
     with open(bin_path, "wb") as f:
         f.write(bw_buffer)
         f.write(red_buffer)
@@ -72,6 +74,5 @@ if __name__ == "__main__":
     else:
         print(f"Nalezeno {len(png_files)} obrázků ke konverzi do BIN...")
         for png_file in png_files:
-            # Nahradí příponu .png za .bin (např. out/index_landscape.png -> out/index_landscape.bin)
             bin_file = os.path.splitext(png_file)[0] + ".bin"
             convert_png_to_bin(png_file, bin_file)
