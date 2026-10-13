@@ -2,9 +2,9 @@ from PIL import Image
 import os
 import glob
 
-TARGET_WIDTH = 800
-TARGET_HEIGHT = 480
-ROW_BYTES = TARGET_WIDTH // 8  # 100 bajtů na řádek
+TARGET_WIDTH = 480
+TARGET_HEIGHT = 800
+ROW_BYTES = TARGET_WIDTH // 8  # 60 bajtů na řádek
 BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 48 000 bajtů
 
 def convert_png_to_bin(png_path, bin_path):
@@ -12,15 +12,14 @@ def convert_png_to_bin(png_path, bin_path):
     
     print(f"Původní rozměry obrázku: {img.width}x{img.height}")
 
-    # Pokud je obrázek na výšku (480x800), otočíme ho o 90° na rozměr 800x480
-    if img.width == 480 and img.height == 800:
-        print("Otáčím portrét (480x800) o 90° na landscape (800x480)...")
-        img = img.rotate(90, expand=True)
-    elif img.width == 800 and img.height == 480:
-        print("Obrázek již má správný formát 800x480.")
-    else:
-        print(f"Měním velikost z {img.width}x{img.height} na 800x480...")
-        img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
+    # Pokud potřebujeme upravit velikost na portrét 480x800
+    if img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
+        print(f"Měním velikost/přizpůsobuji na {TARGET_WIDTH}x{TARGET_HEIGHT}...")
+        # Pokud přichází původní landscape 800x480, otočíme ho na výšku
+        if img.width == 800 and img.height == 480:
+            img = img.rotate(270, expand=True) # nebo 90 podle potřeby zrcadlení
+        else:
+            img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
 
     bw_buffer = bytearray(BUF_SIZE)
     red_buffer = bytearray(BUF_SIZE)
