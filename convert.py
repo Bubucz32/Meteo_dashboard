@@ -17,10 +17,10 @@ def convert_png_to_bin(png_path, bin_path):
     if img.width == 800 and img.height == 480:
         print("Otáčím landscape na výšku pro korekci hardwaru...")
         img = img.rotate(90, expand=True) # případně vyzkoušej rotate(270, expand=True)
-    elif img.width == 800 and img.height == 480:
-        print("Obrázek již má správný formát 800x480.")
+    elif img.width == 480 and img.height == 800:
+        print("Obrázek již má správný formát 480x800.")
     else:
-        print(f"Měním velikost z {img.width}x{img.height} na 800x480...")
+        print(f"Měním velikost z {img.width}x{img.height} na 480x800...")
         img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
 
     bw_buffer = bytearray(BUF_SIZE)
