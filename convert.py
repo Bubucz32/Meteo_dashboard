@@ -2,32 +2,24 @@ from PIL import Image
 import os
 import glob
 
-# Cílové fyzické rozlišení E-Paper displeje (vždy 800x480 pixelů)
 TARGET_WIDTH = 800
 TARGET_HEIGHT = 480
-
-# Paměťový řádek (stride) zarovnaný na 816 pixelů (102 bajtů), 
-# aby řadič displeje správně zarovnal okraje bez posouvání.
-ROW_BYTES = 102  
-BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 102 * 480 = 48 960 bytů na jeden buffer
-
+ROW_BYTES = TARGET_WIDTH // 8  # 100 bajtů na řádek
+BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 48 000 bajtů
 
 def convert_png_to_bin(png_path, bin_path):
     img = Image.open(png_path).convert('RGB')
     
-    # Detekce orientace a případná rotace
+    # Pokud je obrázek na výšku (480x800), otočíme ho správně na šířku (800x480)
     if img.width == 480 and img.height == 800:
-        print(f" Detekován Portrait (480x800), otáčím o 90° doprava na landscape...")
-        img = img.rotate(90, expand=True)
-
-    # Zajištění rozměrů 800x480
-    if img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
+        print(f" Detekován Portrait (480x800), otáčím o 270° na landscape...")
+        img = img.rotate(270, expand=True)
+    elif img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
         img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
 
     bw_buffer = bytearray(BUF_SIZE)
     red_buffer = bytearray(BUF_SIZE)
 
-    # Výchozí stav bufferů: BW bílá (0xFF), RED vypnutá (0x00)
     for i in range(BUF_SIZE):
         bw_buffer[i] = 0xFF
         red_buffer[i] = 0x00
@@ -38,25 +30,21 @@ def convert_png_to_bin(png_path, bin_path):
         for x in range(TARGET_WIDTH):
             r, g, b = pixels[x, y]
 
-            # Výpočet pozice s respektováním širšího paměťového řádku (102 bajtů)
             byte_idx = (y * ROW_BYTES) + (x // 8)
             bit_pos = 7 - (x % 8)
 
-            # 1. Detekce ČERVENÉ barvy
             if r > 140 and g < 90 and b < 90:
-                red_buffer[byte_idx] |= (1 << bit_pos)  # RED = 1
-                bw_buffer[byte_idx] |= (1 << bit_pos)   # BW = 1 (Bílá pod červenou)
+                red_buffer[byte_idx] |= (1 << bit_pos)  
+                bw_buffer[byte_idx] |= (1 << bit_pos)   
             else:
-                red_buffer[byte_idx] &= ~(1 << bit_pos) # RED = 0
+                red_buffer[byte_idx] &= ~(1 << bit_pos) 
                 
-                # 2. Výpočet jasu (Luminance) pro ČERNÁ vs BÍLÁ
                 luminance = (r * 299 + g * 587 + b * 114) // 1000
                 if luminance < 100:
-                    bw_buffer[byte_idx] &= ~(1 << bit_pos) # BW = 0 (Černá)
+                    bw_buffer[byte_idx] &= ~(1 << bit_pos) 
                 else:
-                    bw_buffer[byte_idx] |= (1 << bit_pos)  # BW = 1 (Bílá)
+                    bw_buffer[byte_idx] |= (1 << bit_pos)  
 
-    # Zápis obou bufferů do jednoho .bin souboru (celkem ~97.9 kB)
     with open(bin_path, "wb") as f:
         f.write(bw_buffer)
         f.write(red_buffer)
