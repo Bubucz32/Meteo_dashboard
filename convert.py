@@ -12,9 +12,16 @@ def convert_png_to_bin(png_path, bin_path):
     
     print(f"Původní rozměry obrázku: {img.width}x{img.height}")
 
-  if img.width == 480 and img.height == 800:
+    # Pokud je obrázek na výšku (480x800), otočíme ho o 270° na landscape (800x480)
+    if img.width == 480 and img.height == 800:
         print("Otáčím portrét (480x800) o 270° na landscape (800x480)...")
         img = img.rotate(270, expand=True)
+    elif img.width == 800 and img.height == 480:
+        print("Obrázek již má správný formát 800x480.")
+    else:
+        print(f"Měním velikost z {img.width}x{img.height} na 800x480...")
+        img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
+
     bw_buffer = bytearray(BUF_SIZE)
     red_buffer = bytearray(BUF_SIZE)
 
@@ -32,7 +39,7 @@ def convert_png_to_bin(png_path, bin_path):
             byte_idx = (y * ROW_BYTES) + (x // 8)
             bit_pos = 7 - (x % 8)
 
-            # Detekce červené barvy (červené prvky na dashboardu)
+            # Detekce červené barvy
             if r > 140 and g < 90 and b < 90:
                 red_buffer[byte_idx] |= (1 << bit_pos)  # Červená aktivní
                 bw_buffer[byte_idx] |= (1 << bit_pos)   # Pod červenou bílý podklad
@@ -42,11 +49,9 @@ def convert_png_to_bin(png_path, bin_path):
                 # Výpočet jasu pro černou vs bílou
                 luminance = (r * 299 + g * 587 + b * 114) // 1000
                 if luminance < 100:
-                    # Tmavé / černé pozadí -> v e-papíru se černá zapisuje jako 0
-                    bw_buffer[byte_idx] &= ~(1 << bit_pos) 
+                    bw_buffer[byte_idx] &= ~(1 << bit_pos) # Černá
                 else:
-                    # Světlé / bílé části -> 1
-                    bw_buffer[byte_idx] |= (1 << bit_pos)  
+                    bw_buffer[byte_idx] |= (1 << bit_pos)  # Bílá
 
     with open(bin_path, "wb") as f:
         f.write(bw_buffer)
