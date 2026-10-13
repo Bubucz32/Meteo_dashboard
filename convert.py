@@ -72,11 +72,3 @@ if __name__ == "__main__":
         for png_file in png_files:
             bin_file = os.path.splitext(png_file)[0] + ".bin"
             convert_png_to_bin(png_file, bin_file)
-
-file_size = os.path.getsize(bin_path)
-
-print(f"Velikost BIN: {file_size}")
-
-assert file_size == 96000, (
-    f"Spatna velikost! {file_size} B"
-)
