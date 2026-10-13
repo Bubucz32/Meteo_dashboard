@@ -2,24 +2,19 @@ from PIL import Image
 import os
 import glob
 
-# Cílové rozměry pro nativní portrétní uspořádání v paměti řadiče
-TARGET_WIDTH = 480
-TARGET_HEIGHT = 800
-ROW_BYTES = TARGET_WIDTH // 8  # 480 / 8 = 60 bajtů na řádek
-BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 60 * 800 = 48 000 bajtů
+TARGET_WIDTH = 800
+TARGET_HEIGHT = 480
+ROW_BYTES = TARGET_WIDTH // 8  # 100 bajtů na řádek
+BUF_SIZE = ROW_BYTES * TARGET_HEIGHT  # 48 000 bajtů
 
 def convert_png_to_bin(png_path, bin_path):
     img = Image.open(png_path).convert('RGB')
     
-    print(f"Původní rozměry obrázku: {img.width}x{img.height}")
-
-    # Převod a otočení na cílový rozměr 480x800
-    if img.width == 800 and img.height == 480:
-        print("Otáčím landscape (800x480) na portrét (480x800)...")
-        # Transpozice nebo rotace (zde použijeme správnou orientaci pro srovnání)
-        img = img.rotate(270, expand=True)
+    # Pokud je obrázek na výšku, otočíme ho o 90° nebo 270°, aby byl na šířku 800x480
+    if img.width < img.height:
+        print("Otáčím portrét na landscape 800x480...")
+        img = img.rotate(270, expand=True) # Zkus případně 90, pokud by to bylo vzhůru nohama
     elif img.width != TARGET_WIDTH or img.height != TARGET_HEIGHT:
-        print(f"Měním velikost na {TARGET_WIDTH}x{TARGET_HEIGHT}...")
         img = img.resize((TARGET_WIDTH, TARGET_HEIGHT))
     else:
         print("Obrázek již má správný formát 480x800.")
