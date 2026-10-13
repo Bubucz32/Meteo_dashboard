@@ -72,4 +72,3 @@ if __name__ == "__main__":
         for png_file in png_files:
             bin_file = os.path.splitext(png_file)[0] + ".bin"
             convert_png_to_bin(png_file, bin_file)
-``
